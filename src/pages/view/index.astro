@@ -1,16 +1,17 @@
 ---
+export const prerender = false;
+
 import Layout from "../../Layout/index.astro";
 import { getCompraPorCodigo } from "../../api/supabase.astro";
 import ImprimirFactura from "./imprimir.jsx";
 
 const codigoGeneracion = Astro.url.searchParams.get("r");
-
 let compra = null;
 if (codigoGeneracion) {
     compra = await getCompraPorCodigo(codigoGeneracion);
 }
-
-const items = compra ? JSON.parse(compra.cuerpoDocumento_json) : [];
+const items = compra.cuerpoDocumento_json;
+console.log(items);
 ---
 
 <Layout title="Detalle de Compra">
@@ -45,8 +46,6 @@ const items = compra ? JSON.parse(compra.cuerpoDocumento_json) : [];
                             >
                                 &larr; Regresar al listado
                             </a>
-
-                            <ImprimirFactura client:load compra={compra} />
                         </div>
 
                         <div class="bg-white rounded-lg shadow-lg overflow-hidden">

@@ -32,9 +32,10 @@ export default function ListaDeComprasInteractiva({ compras }) {
 
     const matchItem =
       itemBusqueda === "" ||
-      JSON.parse(compra.cuerpoDocumento_json).some((item) =>
-        item.descripcion.toLowerCase().includes(itemBusqueda.toLowerCase()),
-      );
+      (Array.isArray(compra.cuerpoDocumento_json) &&
+        compra.cuerpoDocumento_json.some((item) =>
+          item.descripcion?.toLowerCase().includes(itemBusqueda.toLowerCase()),
+        ));
 
     return matchCliente && matchDte && matchFecha && matchItem;
   });
@@ -128,7 +129,21 @@ export default function ListaDeComprasInteractiva({ compras }) {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto">
+    <div className="w-full max-w-5xl mx-auto p-4 -12 md:p-6">
+      {/* --- Encabezado y Botón Agregar --- */}
+      <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+          Listado de Compras
+        </h1>
+        <a
+          href="/nuevo"
+          className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+        >
+          <span className="text-lg mr-2">＋</span>
+          Agregar Nuevo
+        </a>
+      </div>
+
       <div className="bg-white p-4 mb-6 border rounded-lg shadow-sm">
         <h3 className="text-lg font-semibold mb-3 text-gray-700">
           Filtros de Búsqueda
