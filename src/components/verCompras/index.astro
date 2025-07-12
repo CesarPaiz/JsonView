@@ -1,0 +1,11 @@
+---
+import ListaDeCompras from "./ListaDeCompras";
+import { getCompras } from "../../api/supabase.astro";
+const misComprasDesdeDB = await getCompras();
+---
+
+<h1 class="text-4xl font-bold text-center mb-8 text-gray-800">
+    Historial de Compras
+</h1>
+
+<ListaDeCompras client:load compras={misComprasDesdeDB} />

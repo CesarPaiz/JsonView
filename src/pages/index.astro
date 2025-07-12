@@ -1,8 +1,14 @@
 ---
 import Layout from "../Layout/index.astro";
 import JsonUploader from "../components/JsonUploader.jsx";
+import { getCompras } from "../api/supabase.astro";
+import ListaCompras from "../components/verCompras/index.astro";
+
+const test = await getCompras();
 ---
 
 <Layout>
     <JsonUploader client:load />
+
+    <ListaCompras />
 </Layout>

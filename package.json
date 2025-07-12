@@ -11,12 +11,18 @@
   "dependencies": {
     "@astrojs/react": "^4.3.0",
     "@astrojs/vercel": "^8.2.1",
+    "@supabase/supabase-js": "^2.50.5",
     "@tailwindcss/vite": "^4.1.11",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
+    "add": "^2.0.6",
     "astro": "^5.11.0",
+    "install": "^0.13.0",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "supabase": "^2.30.4",
     "tailwindcss": "^4.1.11"
   }
 }

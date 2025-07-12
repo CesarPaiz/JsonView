@@ -1,157 +1,222 @@
 ---
-export const prerender = false;
 import Layout from "../../Layout/index.astro";
+import { getCompraPorCodigo } from "../../api/supabase.astro";
+import ImprimirFactura from "./imprimir.jsx";
 
-const dataParam = Astro.request.url;
-const search = Astro.url.searchParams.get("data") || "";
-let parsedData = null;
-let error = null;
+const codigoGeneracion = Astro.url.searchParams.get("r");
 
-try {
-    parsedData = dataParam ? JSON.parse(decodeURIComponent(dataParam)) : null;
-} catch {
-    error = "JSON inválido o malformado.";
+let compra = null;
+if (codigoGeneracion) {
+    compra = await getCompraPorCodigo(codigoGeneracion);
 }
 
-// 1. Datos del Recibo
-// TODO: Pega aquí tu objeto JSON para llenar el recibo.
-const reciboData: any = JSON.parse(search);
-
-// 2. Extraer las secciones principales del JSON para fácil acceso
-const {
-    identificacion,
-    emisor,
-    receptor,
-    cuerpoDocumento,
-    resumen,
-    selloRecepcion,
-} = reciboData;
-
-// 3. Función para formatear moneda
-const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-    }).format(amount ?? 0); // Usa 0 si el valor es nulo
-};
+const items = compra ? JSON.parse(compra.cuerpoDocumento_json) : [];
 ---
 
-<Layout>
-    <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6 font-sans">
-        <header class="text-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-800 uppercase">
-                {emisor?.nombre}
-            </h1>
-            <p class="text-sm text-gray-600">{emisor?.nombreComercial}</p>
-            <p class="text-xs text-gray-500 mt-1">
-                {emisor?.direccion?.complemento}
-            </p>
-            <p class="text-xs text-gray-500">
-                NIT: {emisor?.nit} | NRC: {emisor?.nrc}
-            </p>
-            <p class="text-xs text-gray-500">
-                Tel: {emisor?.telefono} | Email: {emisor?.correo}
-            </p>
-        </header>
+<Layout title="Detalle de Compra">
+    <main class="p-4 md:p-8 bg-gray-50 min-h-screen">
+        <div class="max-w-4xl mx-auto">
+            {
+                !codigoGeneracion ? (
+                    <div class="text-center p-10 bg-white rounded-lg shadow">
+                        <h1 class="text-xl font-semibold text-red-600">
+                            No se proporcionó un código de generación.
+                        </h1>
+                        <p class="text-gray-500 mt-2">
+                            Por favor, accede a través de un enlace válido.
+                        </p>
+                    </div>
+                ) : !compra ? (
+                    <div class="text-center p-10 bg-white rounded-lg shadow">
+                        <h1 class="text-xl font-semibold text-red-600">
+                            Compra no encontrada.
+                        </h1>
+                        <p class="text-gray-500 mt-2">
+                            No se encontró ninguna compra con el código:{" "}
+                            {codigoGeneracion}
+                        </p>
+                    </div>
+                ) : (
+                    <div>
+                        <div class="mb-6 flex flex-wrap gap-4 items-center justify-between">
+                            <a
+                                href="/"
+                                class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-700"
+                            >
+                                &larr; Regresar al listado
+                            </a>
 
-        <hr class="border-dashed my-4" />
-
-        <section class="mb-6">
-            <h2 class="text-lg font-semibold text-center text-gray-700 mb-2">
-                FACTURA ELECTRÓNICA
-            </h2>
-            <div class="flex justify-between text-sm text-gray-600">
-                <span>Fecha:</span>
-                <span>{identificacion?.fecEmi}</span>
-            </div>
-            <div class="flex justify-between text-sm text-gray-600">
-                <span>Hora:</span>
-                <span>{identificacion?.horEmi}</span>
-            </div>
-            <div class="flex justify-between text-sm font-medium text-gray-800">
-                <span>Nº de Control:</span>
-                <span>{identificacion?.numeroControl}</span>
-            </div>
-        </section>
-
-        <section class="mb-6 p-4 bg-gray-50 rounded-md">
-            <h3
-                class="font-semibold text-gray-800 border-b border-dashed pb-2 mb-2"
-            >
-                Cliente
-            </h3>
-            <p class="font-medium text-gray-700">{receptor?.nombre}</p>
-            <p class="text-sm text-gray-600">
-                {receptor?.direccion?.complemento}
-            </p>
-        </section>
-
-        <section class="mb-6">
-            <div
-                class="flex text-sm font-semibold text-gray-700 border-b-2 border-gray-300 pb-2"
-            >
-                <div class="w-1/6 text-left">Cant.</div>
-                <div class="w-3/6 text-left">Descripción</div>
-                <div class="w-1/6 text-right">P. Unit.</div>
-                <div class="w-1/6 text-right">Total</div>
-            </div>
-
-            <div class="mt-2 space-y-2">
-                {
-                    cuerpoDocumento?.map((item: any) => (
-                        <div class="flex text-sm text-gray-800">
-                            <div class="w-1/6 text-left">{item.cantidad}</div>
-                            <div class="w-3/6 text-left">
-                                {item.descripcion}
-                            </div>
-                            <div class="w-1/6 text-right">
-                                {formatCurrency(item.precioUni)}
-                            </div>
-                            <div class="w-1/6 text-right font-medium">
-                                {formatCurrency(item.ventaGravada)}
-                            </div>
+                            <ImprimirFactura client:load compra={compra} />
                         </div>
-                    ))
-                }
-            </div>
-        </section>
 
-        <hr class="border-dashed my-4" />
+                        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                            <header class="bg-blue-600 text-white p-6">
+                                <h1 class="text-2xl font-bold">
+                                    Detalle de Documento Tributario
+                                </h1>
+                                <p class="text-sm opacity-90 mt-1">
+                                    {compra.numeroControl}
+                                </p>
+                            </header>
 
-        <section class="mb-6">
-            <div class="space-y-2">
-                <div class="flex justify-between text-sm text-gray-600">
-                    <span>Subtotal:</span>
-                    <span>{formatCurrency(resumen?.subTotal)}</span>
-                </div>
-                <div class="flex justify-between text-sm text-gray-600">
-                    <span>IVA (13%):</span>
-                    <span>{formatCurrency(resumen?.totalIva)}</span>
-                </div>
-                <div
-                    class="flex justify-between text-lg font-bold text-gray-800 mt-2 pt-2 border-t border-dashed"
-                >
-                    <span>TOTAL A PAGAR:</span>
-                    <span>{formatCurrency(resumen?.totalPagar)}</span>
-                </div>
-            </div>
-            <p class="text-center text-sm font-semibold text-gray-700 mt-4">
-                {resumen?.totalLetras}
-            </p>
-        </section>
+                            <div class="p-6 space-y-6">
+                                <section>
+                                    <h2 class="text-lg font-semibold border-b pb-2 mb-4 text-gray-700">
+                                        Identificación del Documento
+                                    </h2>
+                                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                                        <div>
+                                            <p class="text-gray-500">
+                                                Fecha Emisión
+                                            </p>
+                                            <p class="font-medium text-gray-800">
+                                                {compra.fecEmi}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-500">
+                                                Hora Emisión
+                                            </p>
+                                            <p class="font-medium text-gray-800">
+                                                {compra.horEmi}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-500">Moneda</p>
+                                            <p class="font-medium text-gray-800">
+                                                {compra.tipoMoneda}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </section>
 
-        <footer class="text-center text-xs text-gray-400 mt-6">
-            <p class="font-mono break-all mb-2">
-                <span class="font-semibold">Código Generación:</span>
-                {identificacion?.codigoGeneracion}
-            </p>
-            <p class="font-mono break-all mb-4">
-                <span class="font-semibold">Sello Recepción:</span>
-                {selloRecepcion}
-            </p>
-            <p class="font-semibold text-gray-600">
-                ¡Gracias por su compra! 🧾
-            </p>
-        </footer>
-    </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <section>
+                                        <h2 class="text-lg font-semibold border-b pb-2 mb-4 text-gray-700">
+                                            Emisor
+                                        </h2>
+                                        <div class="space-y-2 text-sm">
+                                            <p class="font-bold text-gray-800">
+                                                {compra.emisor_nombre}
+                                            </p>
+                                            <p class="text-gray-600">
+                                                {compra.emisor_nombreComercial}
+                                            </p>
+                                            <p class="text-gray-600">
+                                                NIT: {compra.emisor_nit}
+                                            </p>
+                                        </div>
+                                    </section>
+                                    <section>
+                                        <h2 class="text-lg font-semibold border-b pb-2 mb-4 text-gray-700">
+                                            Receptor
+                                        </h2>
+                                        <div class="space-y-2 text-sm">
+                                            <p class="font-bold text-gray-800">
+                                                {compra.receptor_nombre}
+                                            </p>
+                                            <p class="text-gray-600">
+                                                Documento:{" "}
+                                                {compra.receptor_numDocumento}
+                                            </p>
+                                        </div>
+                                    </section>
+                                </div>
+
+                                <section>
+                                    <h2 class="text-lg font-semibold border-b pb-2 mb-4 text-gray-700">
+                                        Cuerpo del Documento
+                                    </h2>
+                                    <div class="overflow-x-auto">
+                                        <table class="min-w-full text-sm">
+                                            <thead class="bg-gray-100">
+                                                <tr>
+                                                    <th class="text-left font-semibold p-2">
+                                                        Descripción
+                                                    </th>
+                                                    <th class="text-center font-semibold p-2">
+                                                        Cant.
+                                                    </th>
+                                                    <th class="text-right font-semibold p-2">
+                                                        P. Unitario
+                                                    </th>
+                                                    <th class="text-right font-semibold p-2">
+                                                        Subtotal
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {items.map((item) => (
+                                                    <tr class="border-b">
+                                                        <td class="p-2">
+                                                            {item.descripcion}
+                                                        </td>
+                                                        <td class="text-center p-2">
+                                                            {item.cantidad}
+                                                        </td>
+                                                        <td class="text-right p-2">
+                                                            $
+                                                            {parseFloat(
+                                                                item.precioUni,
+                                                            ).toFixed(2)}
+                                                        </td>
+                                                        <td class="text-right p-2 font-medium">
+                                                            $
+                                                            {parseFloat(
+                                                                item.ventaGravada,
+                                                            ).toFixed(2)}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </section>
+
+                                <section class="flex justify-end">
+                                    <div class="w-full md:w-1/2 lg:w-1/3 space-y-2 text-sm">
+                                        <div class="flex justify-between">
+                                            <p class="text-gray-600">
+                                                Total Gravado:
+                                            </p>
+                                            <p class="font-medium text-gray-800">
+                                                $
+                                                {parseFloat(
+                                                    compra.totalGravada,
+                                                ).toFixed(2)}
+                                            </p>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <p class="text-gray-600">
+                                                IVA (13%):
+                                            </p>
+                                            <p class="font-medium text-gray-800">
+                                                $
+                                                {parseFloat(
+                                                    compra.totalIva,
+                                                ).toFixed(2)}
+                                            </p>
+                                        </div>
+                                        <div class="flex justify-between text-lg font-bold border-t pt-2 mt-2 text-blue-700">
+                                            <p>Total a Pagar:</p>
+                                            <p>
+                                                $
+                                                {parseFloat(
+                                                    compra.totalPagar,
+                                                ).toFixed(2)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+
+                            <footer class="bg-gray-50 p-4 text-center text-xs text-gray-400 border-t">
+                                Código de Generación: {compra.codigoGeneracion}
+                            </footer>
+                        </div>
+                    </div>
+                )
+            }
+        </div>
+    </main>
 </Layout>

@@ -40,7 +40,7 @@ export default function JsonUploader() {
       JSON.parse(text);
       // Codificar y redirigir con el JSON en la URL
       const encoded = encodeURIComponent(text);
-      window.location.href = `/nuevo/subir?r=${encoded}`;
+      window.location.href = `/nuevo/subir?data=${encoded}`;
     } catch {
       setError("El archivo JSON no es válido.");
     }

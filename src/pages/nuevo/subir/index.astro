@@ -1,0 +1,130 @@
+---
+export const prerender = false;
+import Layout from "../../../Layout/index.astro";
+import { insertarCompra } from "../../../api/supabase.astro";
+
+const jsonString = Astro.url.searchParams.get("r");
+
+console.log("JSON String Recibido de la URL:", jsonString);
+
+let encodedJson = null;
+let errorMessage = "";
+
+if (jsonString) {
+    try {
+        encodedJson = JSON.parse(jsonString);
+    } catch (e) {
+        errorMessage = `Error al procesar el JSON: ${e.message}`;
+        console.error(errorMessage);
+    }
+} else {
+    errorMessage = "El parámetro 'q' no se encontró en la URL o está vacío.";
+}
+let success = false;
+let message = "";
+
+if (encodedJson) {
+    try {
+        const jsonString = decodeURIComponent(encodedJson);
+        const nestedJson = JSON.parse(jsonString);
+
+        const compraParaSubir = {
+            version: nestedJson.identificacion.version,
+            ambiente: nestedJson.identificacion.ambiente,
+            tipoDte: nestedJson.identificacion.tipoDte,
+            numeroControl: nestedJson.identificacion.numeroControl,
+            codigoGeneracion: nestedJson.identificacion.codigoGeneracion,
+            fecEmi: nestedJson.identificacion.fecEmi,
+            horEmi: nestedJson.identificacion.horEmi,
+            tipoMoneda: nestedJson.identificacion.tipoMoneda,
+            emisor_nit: nestedJson.emisor.nit,
+            emisor_nombre: nestedJson.emisor.nombre,
+            emisor_nombreComercial: nestedJson.emisor.nombreComercial,
+            receptor_numDocumento: nestedJson.receptor.numDocumento,
+            receptor_nombre: nestedJson.receptor.nombre,
+            totalGravada: nestedJson.resumen.totalGravada,
+            totalIva: nestedJson.resumen.totalIva,
+            montoTotalOperacion: nestedJson.resumen.montoTotalOperacion,
+            totalPagar: nestedJson.resumen.totalPagar,
+            selloRecepcion: nestedJson.selloRecepcion,
+            cuerpoDocumento_json: JSON.parse(nestedJson.cuerpoDocumento),
+            fechaC: new Date().toISOString(),
+        };
+
+        const { error } = await insertarCompra(compraParaSubir);
+
+        if (error) {
+            throw new Error(error.message);
+        }
+
+        success = true;
+        message =
+            "¡Compra guardada exitosamente! Serás redirigido en 3 segundos...";
+    } catch (e) {
+        success = false;
+        message = `Hubo un error al procesar o guardar la compra: ${e.message}`;
+    }
+} else {
+    message = "No se proporcionaron datos para guardar.";
+}
+---
+
+<Layout title="Guardando Compra...">
+    {success && <meta http-equiv="refresh" content="3;url=/" />}
+    <main class="flex items-center justify-center min-h-screen bg-gray-50">
+        <div
+            class="max-w-md w-full p-8 bg-white rounded-xl shadow-lg text-center space-y-4"
+        >
+            {
+                success ? (
+                    <div class="text-green-500">
+                        <svg
+                            class="w-16 h-16 mx-auto"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                        </svg>
+                        <h1 class="text-2xl font-bold mt-4">¡Éxito!</h1>
+                    </div>
+                ) : (
+                    <div class="text-red-500">
+                        <svg
+                            class="w-16 h-16 mx-auto"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                        </svg>
+                        <h1 class="text-2xl font-bold mt-4">Error</h1>
+                    </div>
+                )
+            }
+            <p class="text-gray-600">{message}</p>
+            {
+                !success && (
+                    <a
+                        href="/"
+                        class="inline-block mt-4 px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
+                    >
+                        Volver al inicio
+                    </a>
+                )
+            }
+        </div>
+    </main>
+</Layout>

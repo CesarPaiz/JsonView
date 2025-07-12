@@ -1,0 +1,50 @@
+---
+import { createClient } from "@supabase/supabase-js";
+const supabaseUrl = "https://qaftcvcnyybfdbszwvwq.supabase.co";
+const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+export async function supaConect() {
+    const key = import.meta.env.supaKey;
+    const supabaseUrl = "https://qaftcvcnyybfdbszwvwq.supabase.co";
+    const supabaseKey = key;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    return supabase;
+}
+
+export async function getCompras() {
+    const supabase = await supaConect();
+    let { data: Compras, error } = await supabase.from("Compras").select("*");
+    return Compras;
+}
+export async function getCompraPorCodigo(codigoGeneracion: any) {
+    const supabase = await supaConect();
+
+    let { data: Compra, error } = await supabase
+        .from("Compras")
+        .select("*")
+        .eq("codigoGeneracion", codigoGeneracion)
+        .single();
+
+    if (error) {
+        console.error("Error al obtener la compra:", error);
+        return null;
+    }
+
+    // 3. Retorna la compra encontrada (o null si no existe)
+    return Compra;
+}
+export async function insertarCompra(compraData) {
+    const supabase = await supaConect();
+    const { data, error } = await supabase
+        .from("Compras")
+        .insert(compraData)
+        .select();
+
+    if (error) {
+        console.error("Error al insertar la compra:", error);
+    }
+
+    return { data, error };
+}
+---
